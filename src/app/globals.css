@@ -83,6 +83,14 @@ a {
   color: inherit;
 }
 
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
 ::selection {
   background: rgba(191, 106, 63, 0.22);
   color: var(--foreground);
@@ -178,5 +186,11 @@ a {
 
   .fade-rise {
     animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .section-label {
+    letter-spacing: 0.15em;
   }
 }

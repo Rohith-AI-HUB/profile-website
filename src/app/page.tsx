@@ -215,7 +215,7 @@ export default async function Home() {
           className="paper-panel fade-rise rounded-4xl px-6 py-7 sm:px-8 sm:py-9"
         >
           <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-            <div className="flex flex-col justify-between gap-6">
+            <div className="flex min-w-0 flex-col justify-between gap-6">
               <SectionIntro
                 label="Current Workbench"
                 title="Projects with the freshest public activity."
@@ -232,7 +232,7 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid min-w-0 gap-4">
               {currentProjects.length > 0 ? (
                 <>
                   <CurrentProjectCard
@@ -289,7 +289,11 @@ export default async function Home() {
                 </p>
 
                 <p className="mt-5 rounded-3xl border border-line bg-paper-soft/75 px-4 py-3 text-sm leading-7 text-muted">
-                  {repo.readmeExcerpt ?? "README excerpt unavailable in the current source."}
+                  {getReadableSignal(
+                    repo.readmeExcerpt,
+                    "README excerpt unavailable in the current source.",
+                    240,
+                  )}
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-2">
@@ -433,12 +437,14 @@ function SectionIntro({
   body: string;
 }) {
   return (
-    <div className="max-w-3xl">
+    <div className="min-w-0 max-w-3xl">
       <p className="section-label">{label}</p>
-      <h2 className="mt-4 font-serif text-4xl leading-tight tracking-tight sm:text-5xl">
+      <h2 className="mt-4 font-serif text-[clamp(2.35rem,8vw,3rem)] leading-[0.98] tracking-tight sm:text-5xl">
         {title}
       </h2>
-      <p className="mt-4 text-base leading-8 text-muted sm:text-lg">{body}</p>
+      <p className="mt-4 max-w-2xl text-base leading-8 text-muted sm:text-lg">
+        {body}
+      </p>
     </div>
   );
 }
@@ -459,11 +465,11 @@ function CurrentProjectCard({
   const lane = isProjectDossier(repo) ? repo.lane : repo.automatedLane ?? null;
   const shellClass =
     variant === "lead"
-      ? "rounded-[1.75rem] focus-surface-strong p-5 sm:p-6"
+      ? "min-w-0 rounded-[1.75rem] focus-surface-strong p-5 sm:p-6"
       : "min-w-0 rounded-[1.5rem] focus-surface p-4";
   const titleClass =
     variant === "lead"
-      ? "mt-4 font-serif text-3xl leading-tight tracking-tight sm:text-4xl"
+      ? "mt-4 font-serif text-[clamp(2rem,7vw,3rem)] leading-[0.96] tracking-tight [overflow-wrap:anywhere]"
       : "mt-3 text-lg font-semibold leading-snug [overflow-wrap:anywhere]";
 
   return (
@@ -479,7 +485,7 @@ function CurrentProjectCard({
       </div>
 
       <h3 className={titleClass}>{repo.name}</h3>
-      <p className="mt-3 text-sm leading-7 text-muted sm:text-base">
+      <p className="mt-3 break-words text-sm leading-7 text-muted sm:text-base">
         {summary}
       </p>
 
@@ -503,13 +509,13 @@ function CurrentProjectCard({
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
-          className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+          className="inline-flex w-full items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 sm:w-auto"
           href={`/work/${repo.slug}`}
         >
           Open Project
         </Link>
         <a
-          className="inline-flex items-center justify-center rounded-full border border-line bg-white/70 px-5 py-3 text-sm font-medium transition-colors hover:border-accent hover:bg-accent-soft/45"
+          className="inline-flex w-full items-center justify-center rounded-full border border-line bg-white/70 px-5 py-3 text-sm font-medium transition-colors hover:border-accent hover:bg-accent-soft/45 sm:w-auto"
           href={repo.repoUrl}
           rel="noreferrer"
           target="_blank"
@@ -518,7 +524,7 @@ function CurrentProjectCard({
         </a>
         {repo.homepage ? (
           <a
-            className="inline-flex items-center justify-center rounded-full border border-line bg-white/70 px-5 py-3 text-sm font-medium transition-colors hover:border-accent hover:bg-accent-soft/45"
+            className="inline-flex w-full items-center justify-center rounded-full border border-line bg-white/70 px-5 py-3 text-sm font-medium transition-colors hover:border-accent hover:bg-accent-soft/45 sm:w-auto"
             href={repo.homepage}
             rel="noreferrer"
             target="_blank"
@@ -678,16 +684,54 @@ function isProjectDossier(repo: PortfolioProject): repo is ProjectDossier {
 }
 
 function getProjectSummary(repo: PortfolioProject) {
-  if (isProjectDossier(repo)) {
-    return repo.framing;
+  const source = isProjectDossier(repo)
+    ? repo.framing
+    : repo.automatedFraming ?? repo.description ?? repo.readmeExcerpt;
+
+  return getReadableSignal(
+    source,
+    "Public repository with recent GitHub activity but limited narrative signal.",
+    isProjectDossier(repo) ? 170 : 190,
+  );
+}
+
+function getReadableSignal(
+  value: string | null | undefined,
+  fallback: string,
+  maxLength = 220,
+) {
+  const cleaned = sanitizeProjectText(value);
+
+  if (!cleaned) {
+    return fallback;
   }
 
-  return (
-    repo.automatedFraming ??
-    repo.description ??
-    repo.readmeExcerpt ??
-    "Public repository with recent GitHub activity but limited narrative signal."
-  );
+  return cleaned.length > maxLength
+    ? `${cleaned.slice(0, maxLength - 3).trimEnd()}...`
+    : cleaned;
+}
+
+function sanitizeProjectText(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const cleaned = value
+    .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)]\([^)]*\)/g, "$1")
+    .replace(/\b(?:src|width|height|align|style|class|id|target|rel)\s*=\s*"[^"]*"/gi, " ")
+    .replace(/\b(?:src|width|height|align|style|class|id|target|rel)\s*=\s*'[^']*'/gi, " ")
+    .replace(/<[^>\n]*>/g, " ")
+    .replace(/`{1,3}/g, "")
+    .replace(/[<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned || /^(img|src|width|height|align|style|class|id)\b/i.test(cleaned)) {
+    return null;
+  }
+
+  return cleaned;
 }
 
 function deriveRoleTitle(profile: GitHubProfile) {

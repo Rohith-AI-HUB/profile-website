@@ -116,7 +116,7 @@ async function fetchReadme(slug: string): Promise<{
 }
 
 function cleanNarrativeText(value: string, maxLength: number): string | null {
-  const cleaned = value.replace(/\s+/g, " ").trim();
+  const cleaned = sanitizeContentSignal(value);
 
   if (!cleaned) {
     return null;
@@ -251,6 +251,34 @@ async function fetchGroqNarratives(
   }
 }
 
+function sanitizeContentSignal(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const cleaned = value
+    .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)]\([^)]*\)/g, "$1")
+    .replace(/\b(?:src|width|height|align|style|class|id|target|rel)\s*=\s*"[^"]*"/gi, " ")
+    .replace(/\b(?:src|width|height|align|style|class|id|target|rel)\s*=\s*'[^']*'/gi, " ")
+    .replace(/<[^>\n]*>/g, " ")
+    .replace(/`{1,3}/g, "")
+    .replace(/[*_]/g, "")
+    .replace(/[<>]/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&#39;/gi, "'")
+    .replace(/&quot;/gi, "\"")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned || /^(img|src|width|height|align|style|class|id)\b/i.test(cleaned)) {
+    return null;
+  }
+
+  return cleaned;
+}
+
 function extractReadmeExcerpt(markdown: string): string | null {
   const cleanedLines = markdown
     .replace(/!\[[^\]]*]\([^)]*\)/g, "")
@@ -258,13 +286,14 @@ function extractReadmeExcerpt(markdown: string): string | null {
     .replace(/`{1,3}/g, "")
     .split(/\r?\n/)
     .map((line) =>
-      line
-        .replace(/^#+\s*/, "")
-        .replace(/^>\s*/, "")
-        .replace(/[*_]/g, "")
-        .trim(),
+      sanitizeContentSignal(
+        line
+          .replace(/^#+\s*/, "")
+          .replace(/^>\s*/, "")
+          .trim(),
+      ),
     )
-    .filter(Boolean)
+    .filter((line): line is string => Boolean(line))
     .filter((line) => !/^[|:-]+$/.test(line))
     .filter((line) => !line.startsWith("http"));
 
@@ -324,7 +353,7 @@ function toRepoSummary(repo: GitHubRepoResponse): GitHubRepoSummary {
   return {
     name: repo.name,
     slug: repo.name,
-    description: repo.description,
+    description: sanitizeContentSignal(repo.description),
     language: repo.language,
     homepage: repo.homepage || null,
     repoUrl: repo.html_url,
@@ -423,8 +452,8 @@ function buildAutomatedFraming(repo: GitHubRepoSummary) {
   }
 
   const source =
-    repo.description ??
-    repo.readmeExcerpt ??
+    sanitizeContentSignal(repo.description) ??
+    sanitizeContentSignal(repo.readmeExcerpt) ??
     "Public repository with limited descriptive signal.";
 
   return source.length > 110 ? `${source.slice(0, 107)}...` : source;

@@ -159,8 +159,11 @@ export default async function WorkPage({ params }: WorkPageProps) {
           <article className="paper-panel rounded-[2rem] px-6 py-6">
             <p className="section-label">README Signal</p>
             <p className="mt-5 rounded-[1.5rem] border border-line bg-paper-soft/75 px-4 py-4 text-sm leading-8 text-muted sm:text-base">
-              {dossier.readmeExcerpt ??
-                "This repo does not expose enough README language for a stronger excerpt right now."}
+              {getReadableSignal(
+                dossier.readmeExcerpt,
+                "This repo does not expose enough README language for a stronger excerpt right now.",
+                280,
+              )}
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               {dossier.proof.map((item) => (
@@ -330,4 +333,43 @@ function formatShortDate(value: string) {
     month: "short",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function getReadableSignal(
+  value: string | null | undefined,
+  fallback: string,
+  maxLength = 280,
+) {
+  const cleaned = sanitizeProjectText(value);
+
+  if (!cleaned) {
+    return fallback;
+  }
+
+  return cleaned.length > maxLength
+    ? `${cleaned.slice(0, maxLength - 3).trimEnd()}...`
+    : cleaned;
+}
+
+function sanitizeProjectText(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const cleaned = value
+    .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)]\([^)]*\)/g, "$1")
+    .replace(/\b(?:src|width|height|align|style|class|id|target|rel)\s*=\s*"[^"]*"/gi, " ")
+    .replace(/\b(?:src|width|height|align|style|class|id|target|rel)\s*=\s*'[^']*'/gi, " ")
+    .replace(/<[^>\n]*>/g, " ")
+    .replace(/`{1,3}/g, "")
+    .replace(/[<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned || /^(img|src|width|height|align|style|class|id)\b/i.test(cleaned)) {
+    return null;
+  }
+
+  return cleaned;
 }
