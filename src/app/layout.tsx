@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { SITE_NAME, SITE_URL } from "@/lib/site-data";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -19,23 +20,40 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Rohith B | Build Ledger",
+    default: SITE_NAME,
     template: "%s | Rohith B",
   },
-  description:
-    "A light-theme build ledger shaped from Rohith B's public GitHub work across product engineering, AI systems, and practical tools.",
+  description: "Public projects, live builds, and repositories from Rohith B.",
+  icons: {
+    icon: [{ url: "/tab-icon.png?v=20260328", type: "image/png", sizes: "64x64" }],
+    shortcut: ["/tab-icon.png?v=20260328"],
+    apple: [{ url: "/apple-icon.png?v=20260328", type: "image/png", sizes: "180x180" }],
+  },
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "Rohith B | Build Ledger",
-    description:
-      "Public project dossiers, repo evidence, and working signals from Rohith B's GitHub profile.",
+    title: SITE_NAME,
+    description: "Featured projects with repository links, live demos, and project pages.",
     type: "website",
+    url: "/",
+    siteName: SITE_NAME,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: SITE_NAME,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rohith B | Build Ledger",
-    description:
-      "Public project dossiers and repo evidence from Rohith B's GitHub work.",
+    title: SITE_NAME,
+    description: "Featured projects with repository links, live demos, and project pages.",
+    images: ["/opengraph-image"],
   },
 };
 

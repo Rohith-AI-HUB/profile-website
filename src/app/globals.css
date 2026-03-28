@@ -145,10 +145,6 @@ canvas {
   z-index: 1;
 }
 
-.stamp-ring {
-  border: 1px dashed rgba(191, 106, 63, 0.45);
-}
-
 .section-label {
   font-family: var(--font-ibm-plex-mono), monospace;
   font-size: 0.7rem;

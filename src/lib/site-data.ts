@@ -35,16 +35,19 @@ export type GitHubRepoSummary = {
   automatedNote?: string | null;
 };
 
+export type ProjectVisual = {
+  src: string;
+  alt: string;
+};
+
 export type ProjectDossier = GitHubRepoSummary & {
   lane: CapabilityLane;
   framing: string;
   note: string;
   proof: string[];
-};
-
-export type CapabilitySummary = {
-  name: CapabilityLane;
-  summary: string;
+  problem?: string | null;
+  built?: string | null;
+  visual?: ProjectVisual | null;
 };
 
 export type PortfolioData = {
@@ -55,25 +58,55 @@ export type PortfolioData = {
   repoCount: number;
   recentUpdatedAt: string;
   contactLinks: ContactLink[];
-  capabilitySummaries: CapabilitySummary[];
 };
 
 export type CuratedRepoConfig = {
   lane: CapabilityLane;
   framing: string;
   note: string;
+  problem?: string;
+  built?: string;
 };
 
+export const SITE_NAME = "Rohith B | Build Ledger";
+export const SITE_URL = "https://profile-website-indol-nine.vercel.app";
 export const GITHUB_OWNER = "Rohith-AI-HUB";
 
 export const FEATURED_REPO_ORDER = [
   "personal-canvas",
+  "proposal-generator",
   "Task_Scheduling_Agent_V2",
-  "Adaptive_Course_Planning_System",
-  "PhysioNetSepsisPrediction",
-  "Feedback-APP",
+  "ai-paper-explainer",
   "QR_Generator",
+  "PhysioNetSepsisPrediction",
 ] as const;
+
+export const PROJECT_VISUALS: Partial<Record<string, ProjectVisual>> = {
+  "personal-canvas": {
+    src: "/project-visuals/personal-canvas.png",
+    alt: "Screenshot of the Personal Canvas desktop workspace with folder cards and local search.",
+  },
+  "proposal-generator": {
+    src: "/project-visuals/proposal-generator.png",
+    alt: "Screenshot of the Proposal Generator landing page and proposal builder.",
+  },
+  Task_Scheduling_Agent_V2: {
+    src: "/project-visuals/task-scheduling-agent-v2.png",
+    alt: "Screenshot of the Task Scheduling Agent sign-in screen.",
+  },
+  "ai-paper-explainer": {
+    src: "/project-visuals/ai-paper-explainer.png",
+    alt: "Screenshot of the AI Paper Explainer landing page and feature previews.",
+  },
+  QR_Generator: {
+    src: "/project-visuals/qr-generator.png",
+    alt: "Screenshot of the QR Generator after rendering downloadable QR codes.",
+  },
+  PhysioNetSepsisPrediction: {
+    src: "/project-visuals/physionet-sepsis-prediction.png",
+    alt: "Screenshot of the PhysioNet sepsis notebook showing the ROC curve output.",
+  },
+};
 
 export const CURATED_REPOS: Record<string, CuratedRepoConfig> = {
   "personal-canvas": {
@@ -81,42 +114,66 @@ export const CURATED_REPOS: Record<string, CuratedRepoConfig> = {
     framing:
       "Local-first knowledge canvas for files, search, and chat workflows.",
     note:
-      "I am featuring this because it reads like a product surface, not a one-screen experiment.",
+      "Desktop canvas with folder cards, local search, export, and AI chat.",
+    problem:
+      "Knowledge work gets fragmented across files, notes, and chat tools that do not share context.",
+    built:
+      "Local-first desktop app for browsing folders, searching content, exporting notes, and chatting with personal data.",
+  },
+  "proposal-generator": {
+    lane: "Practical Tools",
+    framing:
+      "Proposal drafting workflow for turning a job post and proof pack into a usable first draft.",
+    note:
+      "Landing page and builder for turning an Upwork job post into a reply-ready proposal.",
+    problem:
+      "Proposal writing repeats the same positioning work every time a new application starts.",
+    built:
+      "Browser-based workflow that matches a job post with saved proof points and returns a quick reply or a fuller proposal draft.",
   },
   Task_Scheduling_Agent_V2: {
     lane: "AI Systems",
     framing:
       "AI-enhanced classroom management system for scheduling, grouping, evaluation, and student support.",
     note:
-      "I am featuring this because the README defines a multi-step operating surface with clear practical scope.",
+      "Sign-in surface for the classroom management app with scheduling and evaluation workflows behind it.",
+    problem:
+      "Class scheduling, grouping, and evaluation break down when the workflow stays manual.",
+    built:
+      "Classroom management platform with AI-assisted scheduling, grouping, extensions, and evaluation flows.",
   },
-  Adaptive_Course_Planning_System: {
+  "ai-paper-explainer": {
     lane: "AI Systems",
     framing:
-      "Recommendation engine aimed at university course planning and sequencing.",
+      "Paper analysis workflow that turns a PDF into structured summaries, concepts, and study prompts.",
     note:
-      "I am featuring this because it frames AI as decision support instead of vague assistant branding.",
+      "Upload flow and results views for summaries, key concepts, formulas, and exam questions.",
+    problem:
+      "Research papers are slow to parse when the useful output is buried inside dense PDFs.",
+    built:
+      "Upload-driven explainer that returns summaries, plain-language breakdowns, key concepts, formulas, and study questions.",
   },
   PhysioNetSepsisPrediction: {
     lane: "AI Systems",
     framing:
       "Machine learning workflow for early sepsis risk detection from ICU data.",
     note:
-      "I am featuring this because the public description ties the model work to a concrete healthcare problem.",
-  },
-  "Feedback-APP": {
-    lane: "Product Engineering",
-    framing:
-      "Full-stack feedback collection system with separated frontend and backend deployment.",
-    note:
-      "I am featuring this because it shows practical product wiring beyond a static marketing page.",
+      "Notebook pipeline with ROC output and risk-level predictions from ICU data.",
+    problem:
+      "Sepsis risk is time-sensitive and hard to identify early from raw ICU measurements alone.",
+    built:
+      "Machine-learning pipeline that aggregates ICU signals, predicts sepsis risk, and compares model performance.",
   },
   QR_Generator: {
     lane: "Practical Tools",
     framing:
       "Small utility for turning URLs into QR outputs at multiple sizes.",
     note:
-      "I am featuring this because it is a compact, clear public tool with little narrative inflation.",
+      "Single-input generator that renders download-ready QR codes in three sizes.",
+    problem:
+      "Generating a clean QR code for a link should not require a design tool or a bloated workflow.",
+    built:
+      "Small web utility that takes one URL or text input and generates downloadable QR outputs at multiple sizes.",
   },
 };
 
@@ -124,35 +181,17 @@ export const CONTACT_LINKS: ContactLink[] = [
   {
     label: "GitHub",
     href: "https://github.com/Rohith-AI-HUB",
-    note: "Primary public work log",
+    note: "Primary public work log and code trail",
   },
   {
     label: "LinkedIn",
     href: "https://www.linkedin.com/in/rohith-b-04082003rb/",
-    note: "Professional profile linked from the GitHub README",
+    note: "Professional background and experience",
   },
   {
     label: "Email",
     href: "mailto:rohithb892@gmail.com",
-    note: "Direct contact listed in the GitHub README",
-  },
-];
-
-export const CAPABILITY_SUMMARIES: CapabilitySummary[] = [
-  {
-    name: "Product Engineering",
-    summary:
-      "Interfaces and workflows that look like products instead of screenshots.",
-  },
-  {
-    name: "AI Systems",
-    summary:
-      "Recommendation, scheduling, and prediction work tied to specific operating problems.",
-  },
-  {
-    name: "Practical Tools",
-    summary:
-      "Utility-grade builds where the value is obvious without a long sales pitch.",
+    note: "Direct contact for roles and project work",
   },
 ];
 
@@ -175,7 +214,7 @@ export const SNAPSHOT_PORTFOLIO: PortfolioData = {
       language: "TypeScript",
       homepage: null,
       repoUrl: "https://github.com/Rohith-AI-HUB/personal-canvas",
-      readmeUrl: "https://github.com/Rohith-AI-HUB/personal-canvas#readme",
+      readmeUrl: "https://github.com/Rohith-AI-HUB/personal-canvas/blob/main/README.md",
       updatedAt: "2026-03-13T13:22:36Z",
       readmeExcerpt:
         "A local-first desktop knowledge canvas for organizing files, searching content, and chatting with your data.",
@@ -183,8 +222,36 @@ export const SNAPSHOT_PORTFOLIO: PortfolioData = {
       framing:
         "Local-first knowledge canvas for files, search, and chat workflows.",
       note:
-        "Featured because the repo reads like a product surface, not a one-screen experiment.",
+        "Desktop canvas with folder cards, local search, export, and AI chat.",
       proof: ["TypeScript", "README-backed", "Updated Mar 2026"],
+      problem:
+        "Knowledge work gets fragmented across files, notes, and chat tools that do not share context.",
+      built:
+        "Local-first desktop app for browsing folders, searching content, exporting notes, and chatting with personal data.",
+      visual: PROJECT_VISUALS["personal-canvas"],
+    },
+    {
+      name: "proposal-generator",
+      slug: "proposal-generator",
+      description: null,
+      language: "TypeScript",
+      homepage: "https://proposal-generator-blond.vercel.app",
+      repoUrl: "https://github.com/Rohith-AI-HUB/proposal-generator",
+      readmeUrl: "https://github.com/Rohith-AI-HUB/proposal-generator/blob/main/README.md",
+      updatedAt: "2026-03-27T04:10:56Z",
+      readmeExcerpt:
+        "Paste an Upwork job post and get a short, job-specific proposal built from a reusable proof pack.",
+      lane: "Practical Tools",
+      framing:
+        "Proposal drafting workflow for turning a job post and proof pack into a usable first draft.",
+      note:
+        "Landing page and builder for turning an Upwork job post into a reply-ready proposal.",
+      proof: ["TypeScript", "Live demo", "Updated Mar 2026"],
+      problem:
+        "Proposal writing repeats the same positioning work every time a new application starts.",
+      built:
+        "Browser-based workflow that matches a job post with saved proof points and returns a quick reply or a fuller proposal draft.",
+      visual: PROJECT_VISUALS["proposal-generator"],
     },
     {
       name: "Task_Scheduling_Agent_V2",
@@ -195,36 +262,69 @@ export const SNAPSHOT_PORTFOLIO: PortfolioData = {
       repoUrl:
         "https://github.com/Rohith-AI-HUB/Task_Scheduling_Agent_V2",
       readmeUrl:
-        "https://github.com/Rohith-AI-HUB/Task_Scheduling_Agent_V2#readme",
+        "https://github.com/Rohith-AI-HUB/Task_Scheduling_Agent_V2/blob/main/README.md",
       updatedAt: "2026-02-28T15:50:41Z",
       readmeExcerpt:
-        "AI-Enhanced Classroom Management System. A production-ready intelligent classroom management platform that combines traditional task management with AI-powered features for scheduling, grouping, evaluation, and student support.",
+        "A production-ready intelligent classroom management platform that combines traditional task management with AI-powered features for scheduling, grouping, evaluation, and student support.",
       lane: "AI Systems",
       framing:
         "AI-enhanced classroom management system for scheduling, grouping, evaluation, and student support.",
       note:
-        "Featured because the README defines a multi-step operating surface with clear practical scope.",
+        "Sign-in surface for the classroom management app with scheduling and evaluation workflows behind it.",
       proof: ["Python", "Live demo", "Updated Feb 2026"],
+      problem:
+        "Class scheduling, grouping, and evaluation break down when the workflow stays manual.",
+      built:
+        "Classroom management platform with AI-assisted scheduling, grouping, extensions, and evaluation flows.",
+      visual: PROJECT_VISUALS.Task_Scheduling_Agent_V2,
     },
     {
-      name: "Adaptive_Course_Planning_System",
-      slug: "Adaptive_Course_Planning_System",
+      name: "ai-paper-explainer",
+      slug: "ai-paper-explainer",
       description: null,
-      language: "Python",
-      homepage: null,
+      language: "TypeScript",
+      homepage: "https://ai-paper-explainer-sigma.vercel.app",
       repoUrl:
-        "https://github.com/Rohith-AI-HUB/Adaptive_Course_Planning_System",
+        "https://github.com/Rohith-AI-HUB/ai-paper-explainer",
       readmeUrl:
-        "https://github.com/Rohith-AI-HUB/Adaptive_Course_Planning_System#readme",
-      updatedAt: "2026-02-17T05:35:21Z",
+        "https://github.com/Rohith-AI-HUB/ai-paper-explainer/blob/master/README.md",
+      updatedAt: "2026-03-26T14:47:32Z",
       readmeExcerpt:
-        "The Adaptive Course Planning System is an intelligent recommendation engine for university students.",
+        "Upload a research paper PDF and get a summary, plain-language explanation, key concepts, formulas, and exam questions.",
       lane: "AI Systems",
       framing:
-        "Recommendation engine aimed at university course planning and sequencing.",
+        "Paper analysis workflow that turns a PDF into structured summaries, concepts, and study prompts.",
       note:
-        "Featured because it frames AI as decision support instead of vague assistant branding.",
-      proof: ["Python", "Recommendation engine", "Updated Feb 2026"],
+        "Upload flow and results views for summaries, key concepts, formulas, and exam questions.",
+      proof: ["TypeScript", "Live demo", "Updated Mar 2026"],
+      problem:
+        "Research papers are slow to parse when the useful output is buried inside dense PDFs.",
+      built:
+        "Upload-driven explainer that returns summaries, plain-language breakdowns, key concepts, formulas, and study questions.",
+      visual: PROJECT_VISUALS["ai-paper-explainer"],
+    },
+    {
+      name: "QR_Generator",
+      slug: "QR_Generator",
+      description: null,
+      language: "JavaScript",
+      homepage: "https://qr-generator-indol-one.vercel.app/",
+      repoUrl: "https://github.com/Rohith-AI-HUB/QR_Generator",
+      readmeUrl: "https://github.com/Rohith-AI-HUB/QR_Generator/blob/main/README.md",
+      updatedAt: "2026-03-26T14:51:31Z",
+      readmeExcerpt:
+        "A simple and elegant QR code generator that creates QR codes in three different sizes from any website URL.",
+      lane: "Practical Tools",
+      framing:
+        "Small utility for turning URLs into QR outputs at multiple sizes.",
+      note:
+        "Single-input generator that renders download-ready QR codes in three sizes.",
+      proof: ["JavaScript", "Live demo", "Updated Mar 2026"],
+      problem:
+        "Generating a clean QR code for a link should not require a design tool or a bloated workflow.",
+      built:
+        "Small web utility that takes one URL or text input and generates downloadable QR outputs at multiple sizes.",
+      visual: PROJECT_VISUALS.QR_Generator,
     },
     {
       name: "PhysioNetSepsisPrediction",
@@ -235,52 +335,21 @@ export const SNAPSHOT_PORTFOLIO: PortfolioData = {
       repoUrl:
         "https://github.com/Rohith-AI-HUB/PhysioNetSepsisPrediction",
       readmeUrl:
-        "https://github.com/Rohith-AI-HUB/PhysioNetSepsisPrediction#readme",
+        "https://github.com/Rohith-AI-HUB/PhysioNetSepsisPrediction/blob/main/README.md",
       updatedAt: "2026-02-16T06:36:35Z",
       readmeExcerpt:
-        "This project develops a machine learning system to predict sepsis risk in ICU patients using vital signs and clinical measurements.",
+        "Machine learning system for predicting sepsis risk in ICU patients from vital signs and clinical measurements.",
       lane: "AI Systems",
       framing:
         "Machine learning workflow for early sepsis risk detection from ICU data.",
       note:
-        "Featured because the public description ties the model work to a concrete healthcare problem.",
-      proof: ["Jupyter Notebook", "Healthcare ML", "Updated Feb 2026"],
-    },
-    {
-      name: "Feedback-APP",
-      slug: "Feedback-APP",
-      description: null,
-      language: "JavaScript",
-      homepage: "https://feedback-app-frontend-izsr.vercel.app",
-      repoUrl: "https://github.com/Rohith-AI-HUB/Feedback-APP",
-      readmeUrl: "https://github.com/Rohith-AI-HUB/Feedback-APP#readme",
-      updatedAt: "2025-02-19T05:42:32Z",
-      readmeExcerpt:
-        "Feedback App is a full-stack web application that allows users to submit and manage feedback.",
-      lane: "Product Engineering",
-      framing:
-        "Full-stack feedback collection system with separated frontend and backend deployment.",
-      note:
-        "Featured because it shows practical product wiring beyond a static marketing page.",
-      proof: ["JavaScript", "Live demo", "Full-stack workflow"],
-    },
-    {
-      name: "QR_Generator",
-      slug: "QR_Generator",
-      description: null,
-      language: "JavaScript",
-      homepage: null,
-      repoUrl: "https://github.com/Rohith-AI-HUB/QR_Generator",
-      readmeUrl: "https://github.com/Rohith-AI-HUB/QR_Generator#readme",
-      updatedAt: "2026-01-19T15:36:52Z",
-      readmeExcerpt:
-        "A simple and elegant QR code generator that creates QR codes in three different sizes from any website URL.",
-      lane: "Practical Tools",
-      framing:
-        "Small utility for turning URLs into QR outputs at multiple sizes.",
-      note:
-        "Featured because it is a compact, clear public tool with little narrative inflation.",
-      proof: ["JavaScript", "Utility build", "Updated Jan 2026"],
+        "Notebook pipeline with ROC output and risk-level predictions from ICU data.",
+      proof: ["Jupyter Notebook", "README-backed", "Updated Feb 2026"],
+      problem:
+        "Sepsis risk is time-sensitive and hard to identify early from raw ICU measurements alone.",
+      built:
+        "Machine-learning pipeline that aggregates ICU signals, predicts sepsis risk, and compares model performance.",
+      visual: PROJECT_VISUALS.PhysioNetSepsisPrediction,
     },
   ],
   archive: [
@@ -305,6 +374,20 @@ export const SNAPSHOT_PORTFOLIO: PortfolioData = {
       readmeUrl: null,
       updatedAt: "2026-03-02T16:46:10Z",
       readmeExcerpt: null,
+    },
+    {
+      name: "Adaptive_Course_Planning_System",
+      slug: "Adaptive_Course_Planning_System",
+      description: null,
+      language: "Python",
+      homepage: null,
+      repoUrl:
+        "https://github.com/Rohith-AI-HUB/Adaptive_Course_Planning_System",
+      readmeUrl:
+        "https://github.com/Rohith-AI-HUB/Adaptive_Course_Planning_System#readme",
+      updatedAt: "2026-02-17T05:35:21Z",
+      readmeExcerpt:
+        "The Adaptive Course Planning System is an intelligent recommendation engine for university students.",
     },
     {
       name: "Calculator",
@@ -340,6 +423,18 @@ export const SNAPSHOT_PORTFOLIO: PortfolioData = {
       readmeExcerpt: null,
     },
     {
+      name: "Feedback-APP",
+      slug: "Feedback-APP",
+      description: null,
+      language: "JavaScript",
+      homepage: "https://feedback-app-frontend-izsr.vercel.app",
+      repoUrl: "https://github.com/Rohith-AI-HUB/Feedback-APP",
+      readmeUrl: "https://github.com/Rohith-AI-HUB/Feedback-APP#readme",
+      updatedAt: "2025-02-19T05:42:32Z",
+      readmeExcerpt:
+        "Feedback App is a full-stack web application that allows users to submit and manage feedback.",
+    },
+    {
       name: "S.P.E.A.R",
       slug: "S.P.E.A.R",
       description: null,
@@ -362,8 +457,7 @@ export const SNAPSHOT_PORTFOLIO: PortfolioData = {
       readmeExcerpt: null,
     },
   ],
-  repoCount: 21,
-  recentUpdatedAt: "2026-03-24T04:40:41Z",
+  repoCount: 22,
+  recentUpdatedAt: "2026-03-27T04:10:56Z",
   contactLinks: CONTACT_LINKS,
-  capabilitySummaries: CAPABILITY_SUMMARIES,
 };

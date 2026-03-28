@@ -1,10 +1,10 @@
 import { cacheLife } from "next/cache";
 import {
-  CAPABILITY_SUMMARIES,
   CONTACT_LINKS,
   CURATED_REPOS,
   FEATURED_REPO_ORDER,
   GITHUB_OWNER,
+  PROJECT_VISUALS,
   SNAPSHOT_PORTFOLIO,
   type CapabilityLane,
   type GitHubProfile,
@@ -51,10 +51,25 @@ type GroqRepoNarrative = {
 };
 
 const FEATURED_REPO_COUNT = 6;
-const EDITORIAL_PRIORITY = new Map<string, number>(
-  FEATURED_REPO_ORDER.map((slug, index) => [slug, index]),
-);
+const FEATURED_REPO_SET = new Set<string>(FEATURED_REPO_ORDER);
 const GROQ_MODEL = process.env.GROQ_MODEL ?? "llama-3.1-8b-instant";
+const README_BOILERPLATE_PATTERNS = [
+  /bootstrapped with create-next-app/i,
+  /\bgetting started\b/i,
+  /\blearn more\b/i,
+  /\bdeploy on vercel\b/i,
+  /\bdeploy next\.js apps with vercel\b/i,
+  /\bnext\.js documentation\b/i,
+  /\binteractive next\.js tutorial\b/i,
+  /\bcheck out .*github repository\b/i,
+  /\bvercel platform\b/i,
+  /\bcreators of next\.js\b/i,
+  /\bdeployment documentation\b/i,
+  /\bopen \[?http:\/\/localhost/i,
+  /\byou can start editing\b/i,
+  /\bthis project uses next\/font\b/i,
+  /\bdownload the react devtools\b/i,
+];
 
 async function fetchGitHubJson<T>(path: string): Promise<T> {
   const response = await fetch(`https://api.github.com${path}`, {
@@ -167,12 +182,12 @@ async function fetchGroqNarratives(
           {
             role: "system",
             content:
-              "You write brutally concise project framing for a public portfolio. Output valid JSON only. Never invent features, users, deployments, or metrics. Use only the repo metadata provided. Lanes must be one of: Product Engineering, AI Systems, Practical Tools.",
+              "You write concise, factual project framing for a public portfolio. Output valid JSON only. Never invent features, users, deployments, impact, or metrics. Use only the repo metadata provided. Lanes must be one of: Product Engineering, AI Systems, Practical Tools.",
           },
           {
             role: "user",
             content: JSON.stringify({
-              task: "For each repository, produce one lane, one short framing sentence, and one short note explaining why it belongs on the site. Keep framing under 115 characters and note under 180 characters.",
+              task: "For each repository, produce one lane, one short framing sentence, and one short public-signal note. Keep framing under 115 characters and note under 180 characters. Notes should describe documentation or deployment visibility, not praise the project.",
               output_schema: {
                 repos: [
                   {
@@ -251,6 +266,10 @@ async function fetchGroqNarratives(
   }
 }
 
+function isBoilerplateSignal(value: string) {
+  return README_BOILERPLATE_PATTERNS.some((pattern) => pattern.test(value));
+}
+
 function sanitizeContentSignal(value: string | null | undefined): string | null {
   if (!value) {
     return null;
@@ -272,11 +291,23 @@ function sanitizeContentSignal(value: string | null | undefined): string | null 
     .replace(/\s+/g, " ")
     .trim();
 
-  if (!cleaned || /^(img|src|width|height|align|style|class|id)\b/i.test(cleaned)) {
+  if (
+    !cleaned ||
+    isBoilerplateSignal(cleaned) ||
+    /^(img|src|width|height|align|style|class|id)\b/i.test(cleaned)
+  ) {
     return null;
   }
 
   return cleaned;
+}
+
+function isBoilerplateReadmeLine(line: string) {
+  if (isBoilerplateSignal(line)) {
+    return true;
+  }
+
+  return /^(npm|yarn|pnpm|bun)\s/i.test(line) || /[:|]$/.test(line);
 }
 
 function extractReadmeExcerpt(markdown: string): string | null {
@@ -295,10 +326,12 @@ function extractReadmeExcerpt(markdown: string): string | null {
     )
     .filter((line): line is string => Boolean(line))
     .filter((line) => !/^[|:-]+$/.test(line))
-    .filter((line) => !line.startsWith("http"));
+    .filter((line) => !line.startsWith("http"))
+    .filter((line) => !isBoilerplateReadmeLine(line))
+    .filter((line) => line.split(/\s+/).length >= 6);
 
   const candidate =
-    cleanedLines.find((line) => line.length >= 60 && !line.endsWith("|")) ??
+    cleanedLines.find((line) => line.length >= 60) ??
     cleanedLines.find((line) => line.length >= 28) ??
     null;
 
@@ -454,7 +487,7 @@ function buildAutomatedFraming(repo: GitHubRepoSummary) {
   const source =
     sanitizeContentSignal(repo.description) ??
     sanitizeContentSignal(repo.readmeExcerpt) ??
-    "Public repository with limited descriptive signal.";
+    "Repository with limited public description.";
 
   return source.length > 110 ? `${source.slice(0, 107)}...` : source;
 }
@@ -465,18 +498,18 @@ function buildAutomatedNote(repo: GitHubRepoSummary) {
   }
 
   if (repo.homepage && repo.readmeExcerpt) {
-    return "I am including this because the repo has both a readable README trail and a public live build.";
+    return "Public repo with a linked live build and a readable README.";
   }
 
   if (repo.readmeExcerpt) {
-    return "I am including this because the README gives enough signal to explain what I built without extra filler.";
+    return "Public repo with a readable README and recent commit history.";
   }
 
   if (repo.description) {
-    return "I am including this because the repository has recent public activity and a usable project description.";
+    return "Public repo with a short description and limited documentation.";
   }
 
-  return "I am keeping this visible because the repository is public, even if the documentation is still thin.";
+  return "Public repo with limited written documentation.";
 }
 
 function toDossier(repo: GitHubRepoSummary): ProjectDossier {
@@ -488,60 +521,28 @@ function toDossier(repo: GitHubRepoSummary): ProjectDossier {
     framing: curated?.framing ?? buildAutomatedFraming(repo),
     note: curated?.note ?? buildAutomatedNote(repo),
     proof: buildProof(repo, repo.readmeExcerpt),
+    problem: curated?.problem ?? null,
+    built: curated?.built ?? null,
+    visual: PROJECT_VISUALS[repo.slug] ?? null,
   };
 }
 
-function getFeaturedScore(repo: GitHubRepoSummary) {
-  let score = 0;
-
-  if (repo.readmeExcerpt) {
-    score += 24;
-  }
-
-  if (repo.homepage) {
-    score += 14;
-  }
-
-  if (repo.description) {
-    score += 10;
-  }
-
-  if (repo.language) {
-    score += 4;
-  }
-
-  if (CURATED_REPOS[repo.slug]) {
-    score += 12;
-  }
-
-  const ageInDays =
-    (Date.now() - new Date(repo.updatedAt).getTime()) / (1000 * 60 * 60 * 24);
-  score += Math.max(0, 18 - Math.min(ageInDays / 7, 18));
-
-  return score;
-}
-
-function compareFeaturedRepos(left: GitHubRepoSummary, right: GitHubRepoSummary) {
-  const scoreDifference = getFeaturedScore(right) - getFeaturedScore(left);
-
-  if (scoreDifference !== 0) {
-    return scoreDifference;
-  }
-
-  const leftPriority = EDITORIAL_PRIORITY.get(left.slug) ?? Number.POSITIVE_INFINITY;
-  const rightPriority = EDITORIAL_PRIORITY.get(right.slug) ?? Number.POSITIVE_INFINITY;
-
-  if (leftPriority !== rightPriority) {
-    return leftPriority - rightPriority;
-  }
-
-  return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
-}
-
 function buildFeatured(repos: GitHubRepoSummary[]): ProjectDossier[] {
+  const repoMap = new Map(repos.map((repo) => [repo.slug, repo]));
+  const editorial = FEATURED_REPO_ORDER.map((slug) => repoMap.get(slug)).filter(
+    (repo): repo is GitHubRepoSummary => Boolean(repo),
+  );
+
+  if (editorial.length > 0) {
+    return editorial.map(toDossier);
+  }
+
   return repos
-    .slice()
-    .sort(compareFeaturedRepos)
+    .filter(
+      (repo) =>
+        !FEATURED_REPO_SET.has(repo.slug) &&
+        Boolean(repo.readmeExcerpt || repo.description || repo.homepage),
+    )
     .slice(0, FEATURED_REPO_COUNT)
     .map(toDossier);
 }
@@ -581,7 +582,6 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       recentUpdatedAt:
         repos[0]?.updated_at ?? SNAPSHOT_PORTFOLIO.recentUpdatedAt,
       contactLinks: CONTACT_LINKS,
-      capabilitySummaries: CAPABILITY_SUMMARIES,
     };
   } catch {
     return SNAPSHOT_PORTFOLIO;
