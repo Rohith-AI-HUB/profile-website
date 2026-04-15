@@ -556,7 +556,7 @@ function formatMonthYear(value: string): string {
 
 export async function getPortfolioData(): Promise<PortfolioData> {
   "use cache";
-  cacheLife("hours");
+  cacheLife("minutes", 30);
 
   try {
     const [user, repos] = await Promise.all([
@@ -592,7 +592,7 @@ export async function getProjectDossier(
   slug: string,
 ): Promise<ProjectDossier | null> {
   "use cache";
-  cacheLife("hours");
+  cacheLife("minutes", 30);
 
   const portfolio = await getPortfolioData();
 
