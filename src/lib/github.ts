@@ -170,7 +170,7 @@ async function fetchGroqNarratives(
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        Authorization: `Bearer ${(globalThis as any).process?.env?.GROQ_API_KEY ?? ""}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -556,7 +556,7 @@ function formatMonthYear(value: string): string {
 
 export async function getPortfolioData(): Promise<PortfolioData> {
   "use cache";
-  cacheLife("minutes", 15);
+  cacheLife("minutes");
 
   try {
     const [user, repos] = await Promise.all([
@@ -592,7 +592,7 @@ export async function getProjectDossier(
   slug: string,
 ): Promise<ProjectDossier | null> {
   "use cache";
-  cacheLife("minutes", 15);
+  cacheLife("minutes");
 
   const portfolio = await getPortfolioData();
 
