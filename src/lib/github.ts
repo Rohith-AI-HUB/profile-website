@@ -2,7 +2,6 @@ import { cacheLife } from "next/cache";
 import {
   CONTACT_LINKS,
   CURATED_REPOS,
-  FEATURED_REPO_ORDER,
   GITHUB_OWNER,
   PROJECT_VISUALS,
   SNAPSHOT_PORTFOLIO,
@@ -51,7 +50,6 @@ type GroqRepoNarrative = {
 };
 
 const FEATURED_REPO_COUNT = 6;
-const FEATURED_REPO_SET = new Set<string>(FEATURED_REPO_ORDER);
 const GROQ_MODEL = process.env.GROQ_MODEL ?? "llama-3.1-8b-instant";
 const README_BOILERPLATE_PATTERNS = [
   /bootstrapped with create-next-app/i,
@@ -528,20 +526,11 @@ function toDossier(repo: GitHubRepoSummary): ProjectDossier {
 }
 
 function buildFeatured(repos: GitHubRepoSummary[]): ProjectDossier[] {
-  const repoMap = new Map(repos.map((repo) => [repo.slug, repo]));
-  const editorial = FEATURED_REPO_ORDER.map((slug) => repoMap.get(slug)).filter(
-    (repo): repo is GitHubRepoSummary => Boolean(repo),
-  );
-
-  if (editorial.length > 0) {
-    return editorial.map(toDossier);
-  }
-
-  return repos
-    .filter(
-      (repo) =>
-        !FEATURED_REPO_SET.has(repo.slug) &&
-        Boolean(repo.readmeExcerpt || repo.description || repo.homepage),
+  // Sort all repos by updatedAt (most recent first), take top 6
+  return [...repos]
+    .sort(
+      (left, right) =>
+        new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
     )
     .slice(0, FEATURED_REPO_COUNT)
     .map(toDossier);
