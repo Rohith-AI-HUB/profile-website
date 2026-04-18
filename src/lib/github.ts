@@ -2,6 +2,7 @@ import { cacheLife } from "next/cache";
 import {
   CONTACT_LINKS,
   CURATED_REPOS,
+  FEATURED_REPO_ORDER,
   GITHUB_OWNER,
   PROJECT_VISUALS,
   SNAPSHOT_PORTFOLIO,
@@ -526,14 +527,34 @@ function toDossier(repo: GitHubRepoSummary): ProjectDossier {
 }
 
 function buildFeatured(repos: GitHubRepoSummary[]): ProjectDossier[] {
-  // Sort all repos by updatedAt (most recent first), take top 6
-  return [...repos]
-    .sort(
-      (left, right) =>
-        new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
-    )
-    .slice(0, FEATURED_REPO_COUNT)
-    .map(toDossier);
+  // Create a map for quick repo lookup
+  const repoMap = new Map(repos.map((repo) => [repo.slug, repo]));
+
+  // First, add all available repos from FEATURED_REPO_ORDER (preserving order)
+  const featured: GitHubRepoSummary[] = [];
+  const featuredSet = new Set<string>();
+
+  for (const slug of FEATURED_REPO_ORDER) {
+    const repo = repoMap.get(slug);
+    if (repo) {
+      featured.push(repo);
+      featuredSet.add(slug);
+    }
+  }
+
+  // If we still have room, fill with remaining repos sorted by recency
+  if (featured.length < FEATURED_REPO_COUNT) {
+    const remaining = [...repos]
+      .filter((repo) => !featuredSet.has(repo.slug))
+      .sort(
+        (left, right) =>
+          new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+      );
+
+    featured.push(...remaining.slice(0, FEATURED_REPO_COUNT - featured.length));
+  }
+
+  return featured.slice(0, FEATURED_REPO_COUNT).map(toDossier);
 }
 
 function formatMonthYear(value: string): string {

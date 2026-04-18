@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LogoMark } from "@/components/logo-mark";
+import { ExpandableArchive } from "@/components/expandable-archive";
 import { getPortfolioData } from "@/lib/github";
 import type {
   CapabilityLane,
@@ -14,10 +15,6 @@ type PortfolioProject = GitHubRepoSummary | ProjectDossier;
 export default async function Home() {
   const portfolio = await getPortfolioData();
   const primaryFeatured = portfolio.featured.slice(0, 3);
-  const supportingRepos = [...portfolio.featured.slice(3), ...portfolio.archive].slice(
-    0,
-    8,
-  );
 
   return (
     <main className="flex-1">
@@ -119,11 +116,7 @@ export default async function Home() {
             title="More public repositories."
             body="Recent and supporting repos outside the top featured set."
           />
-          <div className="mt-8 grid gap-3 md:grid-cols-2">
-            {supportingRepos.map((repo) => (
-              <CompactRepoLink key={repo.slug} repo={repo} />
-            ))}
-          </div>
+          <ExpandableArchive repos={portfolio.archive} />
         </section>
 
         <section
